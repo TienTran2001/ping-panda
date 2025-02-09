@@ -29,6 +29,7 @@
     "react-dom": "^18",
     "react-syntax-highlighter": "^15.6.1",
     "superjson": "^2.2.1",
+    "swiper": "^11.2.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "wrangler": "^3.72.0",
