@@ -6,7 +6,6 @@ import { cn } from "@/utils"
 
 import "./globals.css"
 import { ClerkProvider } from "@clerk/nextjs"
-import { AppProgressBar as ProgressBar } from "next-nprogress-bar"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 const eb_garamond = EB_Garamond({
@@ -29,12 +28,6 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className={cn(inter.variable, eb_garamond.variable)}>
         <body className="font-sans bg-brand-50 text-brand-950 antialiased">
-          <ProgressBar
-            height="4px"
-            color="#fffd00"
-            options={{ showSpinner: false }}
-            shallowRouting
-          />
           <Providers>{children}</Providers>
         </body>
       </html>

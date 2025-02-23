@@ -8,21 +8,28 @@ type BannerCarouselProps = {
 }
 
 const BannerCarousel = forwardRef((props: BannerCarouselProps, ref) => {
-  const carouselRef = useRef<HTMLDivElement>(null)
-  const animationFrameId = useRef<number | null>(null)
-  const accumulatedScroll = useRef(0) // Thêm accumulator
-  const speed = 0.5 // Có thể đặt nhỏ hơn 1
+  const carouselRef = useRef<HTMLDivElement>(null) // reference to the carousel
+  const animationFrameId = useRef<number | null>(null) // save id of requestAnimationFrame to cancel it
+  const accumulatedScroll = useRef(0) // cumulative scroll distance
+  const speed = 0.5 // speed of scroll
 
+  /**
+   * accumulatedScroll.current += speed: Accumulate speed.
+   * Math.floor(accumulatedScroll.current): Get the integer part for smooth scrolling.
+   * accumulatedScroll.current -= delta: Keep the decimal part for the next scroll.
+   * scrollLeft >= scrollWidth / 2: Reset to 0 when scrolling is half way.
+   * requestAnimationFrame(scroll): Continue the scroll loop.
+   */
   const scroll = () => {
     if (carouselRef.current) {
-      accumulatedScroll.current += speed // Tích lũy tốc độ
-      const delta = Math.floor(accumulatedScroll.current) // Lấy phần nguyên
+      accumulatedScroll.current += speed // accumulate speed
+      const delta = Math.floor(accumulatedScroll.current) // get integer part
 
       if (delta > 0) {
         carouselRef.current.scrollLeft += delta
-        accumulatedScroll.current -= delta // Giữ lại phần thập phân
+        accumulatedScroll.current -= delta // keep the decimal part
 
-        // Reset khi chạm điểm giữa
+        // Reset when reach the middle
         if (
           carouselRef.current.scrollLeft >=
           carouselRef.current.scrollWidth / 2
@@ -53,12 +60,13 @@ const BannerCarousel = forwardRef((props: BannerCarouselProps, ref) => {
     pauseScroll,
   }))
 
+  // Start scroll when component mount
   useEffect(() => {
     startScroll()
-    return () => pauseScroll()
+    return () => pauseScroll() // stop scroll when component unmount
   }, [])
 
-  const duplicatedImages = [...props.listBannerImage, ...props.listBannerImage]
+  const duplicatedImages = [...props.listBannerImage, ...props.listBannerImage] // duplicate images to create infinite scroll effect
 
   return (
     <div
