@@ -13,7 +13,7 @@ export const register = ({ data }: { data: RegisterInput }) => {
 }
 
 type UseRegisterPropsActions = {
-  mutationConfig?: MutationConfig
+  mutationConfig?: MutationConfig<typeof register>
 }
 
 export const useRegister = ({}) => {}

@@ -1,7 +1,9 @@
 "use client"
 
+import { sendPost } from "@/lib/axios"
 import { zodResolver } from "@hookform/resolvers/zod"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import {
   ClipboardEvent,
   KeyboardEvent,
@@ -9,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react"
-import { SubmitHandler, useForm } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 // first step schema
@@ -34,6 +36,9 @@ export const SignUpForm = () => {
   const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(""))
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null))
+  const [countdown, setCountdown] = useState(60)
+
+  const router = useRouter()
 
   // First step form
   const {
@@ -54,12 +59,46 @@ export const SignUpForm = () => {
   // Handle first step form submission
   const onRegisterSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true)
-
     // Call APi get otp
+    try {
+      const response = await sendPost("/auth/otp/request", {
+        email: data.email,
+      })
+      console.log("Response: ", response)
+    } catch (error) {
+      console.error("Error: ", error)
+      setIsSubmitting(false)
+    }
+
+    setInterval(() => {
+      if (countdown > 0) {
+        setCountdown((prev) => prev - 1)
+      }
+    }, 1000)
 
     setUserData(data)
     setStep(2)
     setIsSubmitting(false)
+  }
+
+  const handleOtpSubmit = async () => {
+    setIsSubmitting(true)
+
+    try {
+      const response = await sendPost("/auth/register", {
+        email: userData?.email,
+        name: userData?.name,
+        password: userData?.password,
+        otp: otpValues.join(""),
+      })
+      console.log("Response: ", response)
+      setIsSubmitting(false)
+      router.push("/login")
+    } catch (error: any) {
+      console.log("Error: ", error)
+      alert(error.response.data.message)
+      setIsSubmitting(false)
+    }
   }
 
   // Handle back button
@@ -110,10 +149,6 @@ export const SignUpForm = () => {
     }
   }
 
-  const onSubmit: SubmitHandler<RegisterFormValues> = (data) => {
-    console.log("Form submitted:", data)
-  }
-
   // Reset the form to start over
   const handleReset = () => {
     setStep(1)
@@ -158,6 +193,7 @@ export const SignUpForm = () => {
                   <div>
                     We&apos;ve sent a verification code to{" "}
                     <span className="font-bold">{userData?.email}</span>
+                    {countdown > 0 && <span>. ({countdown}s)</span>}
                   </div>
                 )}
               </p>
@@ -296,7 +332,7 @@ export const SignUpForm = () => {
                     type="button"
                     className="w-full py-3 px-4 bg-brand-700 text-white rounded-md hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={isSubmitting}
-                    // onClick={handleOtpSubmit}
+                    onClick={handleOtpSubmit}
                   >
                     {isSubmitting ? "Verifying..." : "Complete Registration"}
                   </button>

@@ -1,4 +1,4 @@
-import { cn } from "@/utils"
+import { cn } from "@/lib/utils"
 import type { Metadata } from "next"
 import { EB_Garamond, Inter } from "next/font/google"
 import { Providers } from "../components/providers"
