@@ -1,8 +1,12 @@
 "use client"
 
+<<<<<<< HEAD
 import { useRegister } from "@/features/auth/api/register"
 import { sendPost } from "@/lib/axios"
 import { cn } from "@/lib/utils"
+=======
+import { sendPost } from "@/lib/axios"
+>>>>>>> 93b06b0e507f7c9887a2550c305e58f35e1350ea
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CircleAlert } from "lucide-react"
 import Image from "next/image"
@@ -43,6 +47,7 @@ export const SignUpForm = () => {
   const [countdown, setCountdown] = useState(60)
 
   const router = useRouter()
+<<<<<<< HEAD
 
   const signUp = useRegister({
     mutationConfig: {
@@ -55,6 +60,8 @@ export const SignUpForm = () => {
       },
     },
   })
+=======
+>>>>>>> 93b06b0e507f7c9887a2550c305e58f35e1350ea
 
   // First step form
   const {
@@ -93,6 +100,7 @@ export const SignUpForm = () => {
     setIsSubmitting(true)
     // Call APi get otp
     try {
+<<<<<<< HEAD
       await sendPost("/auth/otp/request", {
         email: data.email,
       })
@@ -106,6 +114,22 @@ export const SignUpForm = () => {
     }
 
     countdownInterval()
+=======
+      const response = await sendPost("/auth/otp/request", {
+        email: data.email,
+      })
+      console.log("Response: ", response)
+    } catch (error) {
+      console.error("Error: ", error)
+      setIsSubmitting(false)
+    }
+
+    setInterval(() => {
+      if (countdown > 0) {
+        setCountdown((prev) => prev - 1)
+      }
+    }, 1000)
+>>>>>>> 93b06b0e507f7c9887a2550c305e58f35e1350ea
 
     setIsSubmitting(false)
   }
@@ -113,6 +137,7 @@ export const SignUpForm = () => {
   const handleOtpSubmit = async () => {
     setIsSubmitting(true)
 
+<<<<<<< HEAD
     signUp.mutate({
       data: {
         email: userData?.email || "",
@@ -135,6 +160,21 @@ export const SignUpForm = () => {
       countdownInterval()
     } catch (error: any) {
       setIsErrorStep1(error.response.data.message)
+=======
+    try {
+      const response = await sendPost("/auth/register", {
+        email: userData?.email,
+        name: userData?.name,
+        password: userData?.password,
+        otp: otpValues.join(""),
+      })
+      console.log("Response: ", response)
+      setIsSubmitting(false)
+      router.push("/login")
+    } catch (error: any) {
+      console.log("Error: ", error)
+      alert(error.response.data.message)
+>>>>>>> 93b06b0e507f7c9887a2550c305e58f35e1350ea
       setIsSubmitting(false)
     }
   }
