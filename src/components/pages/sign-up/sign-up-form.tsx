@@ -1,7 +1,10 @@
 "use client"
 
+import { useRegister } from "@/features/auth/api/register"
 import { sendPost } from "@/lib/axios"
+import { cn } from "@/lib/utils"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { CircleAlert } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import {
@@ -32,6 +35,7 @@ export const SignUpForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
+  const [isErrorStep1, setIsErrorStep1] = useState("")
 
   const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(""))
 
@@ -39,6 +43,18 @@ export const SignUpForm = () => {
   const [countdown, setCountdown] = useState(60)
 
   const router = useRouter()
+
+  const signUp = useRegister({
+    mutationConfig: {
+      onSuccess: () => {
+        // router.push("/login")
+        setIsComplete(true)
+      },
+      onError: (error: any) => {
+        setIsSubmitting(false)
+      },
+    },
+  })
 
   // First step form
   const {
@@ -56,47 +72,69 @@ export const SignUpForm = () => {
     },
   })
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  const countdownInterval = () => {
+    intervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+          }
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
   // Handle first step form submission
   const onRegisterSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true)
     // Call APi get otp
     try {
-      const response = await sendPost("/auth/otp/request", {
+      await sendPost("/auth/otp/request", {
         email: data.email,
       })
-      console.log("Response: ", response)
-    } catch (error) {
-      console.error("Error: ", error)
+      setUserData(data)
+      setStep(2)
+      setIsErrorStep1("")
+      setCountdown(60)
+    } catch (error: any) {
+      setIsErrorStep1(error.response.data.message)
       setIsSubmitting(false)
     }
 
-    setInterval(() => {
-      if (countdown > 0) {
-        setCountdown((prev) => prev - 1)
-      }
-    }, 1000)
+    countdownInterval()
 
-    setUserData(data)
-    setStep(2)
     setIsSubmitting(false)
   }
 
   const handleOtpSubmit = async () => {
     setIsSubmitting(true)
 
-    try {
-      const response = await sendPost("/auth/register", {
-        email: userData?.email,
-        name: userData?.name,
-        password: userData?.password,
+    signUp.mutate({
+      data: {
+        email: userData?.email || "",
+        name: userData?.name || "",
+        password: userData?.password || "",
         otp: otpValues.join(""),
+      },
+    })
+  }
+
+  const handleResendOtp = async () => {
+    try {
+      await sendPost("/auth/otp/request", {
+        email: userData?.email || "",
       })
-      console.log("Response: ", response)
-      setIsSubmitting(false)
-      router.push("/login")
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+      setCountdown(60)
+      countdownInterval()
     } catch (error: any) {
-      console.log("Error: ", error)
-      alert(error.response.data.message)
+      setIsErrorStep1(error.response.data.message)
       setIsSubmitting(false)
     }
   }
@@ -106,6 +144,9 @@ export const SignUpForm = () => {
     setStep(1)
     setOtpValues(Array(6).fill(""))
     setOtpError(null)
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+    }
   }
 
   // Handle OTP input change
@@ -199,6 +240,12 @@ export const SignUpForm = () => {
               </p>
             </div>
             <div className="space-y-6 w-full">
+              {isErrorStep1 && (
+                <div className="p-4 text-red-800 border-2 border-l-[6px] border-red-800 rounded-md flex items-center gap-x-2">
+                  <CircleAlert className="w-5 h-5" />
+                  <span>{isErrorStep1}</span>
+                </div>
+              )}
               {step === 1 ? (
                 <form
                   onSubmit={handleSubmit(onRegisterSubmit)}
@@ -322,8 +369,12 @@ export const SignUpForm = () => {
                   <div className="text-sm text-center">
                     Didn&apos;t receive a code?{" "}
                     <button
-                      className="text-blue-600 hover:text-blue-700 p-0 underline"
-                      onClick={() => {}}
+                      className={cn(
+                        "text-blue-600 hover:text-blue-700 p-0 underline",
+                        countdown > 40 && "opacity-50 cursor-not-allowed"
+                      )}
+                      onClick={handleResendOtp}
+                      disabled={countdown > 40}
                     >
                       Resend
                     </button>
@@ -350,32 +401,17 @@ export const SignUpForm = () => {
           </>
         ) : (
           <div className="py-12 px-6 text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <svg
-                className="h-8 w-8 text-green-600"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-                <path d="m9 12 2 2 4-4" />
-              </svg>
-            </div>
             <h2 className="text-2xl font-bold">Registration Complete!</h2>
             <p className="text-base text-gray-500">
               Your account has been successfully created.
             </p>
             <button
-              className="mt-4 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              onClick={handleReset}
+              className="mt-4 py-3 px-4 bg-brand-700 text-white rounded-md hover:bg-brand-800"
+              onClick={() => {
+                router.push(`/login?email=${userData?.email}`)
+              }}
             >
-              Back to Registration
+              Go to Login
             </button>
           </div>
         )}

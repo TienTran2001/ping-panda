@@ -1,7 +1,12 @@
 "use client"
 
-import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import {
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query"
 import { HTTPException } from "hono/http-exception"
+import { SnackbarProvider } from "notistack"
 import { PropsWithChildren, useState } from "react"
 
 export const Providers = ({ children }: PropsWithChildren) => {
@@ -25,5 +30,19 @@ export const Providers = ({ children }: PropsWithChildren) => {
       })
   )
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SnackbarProvider
+        maxSnack={3}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+        autoHideDuration={3000}
+        preventDuplicate
+      >
+        {children}
+      </SnackbarProvider>
+    </QueryClientProvider>
+  )
 }
